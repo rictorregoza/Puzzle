@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Puzzle</title>
+    <style>
+        .puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(3, 100px); /* Adjust the number to change the grid size */
+            gap: 5px; /* Adjust the gap between puzzle pieces */
+        }
+        .puzzle-piece {
+            width: 100px; /* Adjust the width and height to match your puzzle image dimensions */
+            height: 100px;
+            border: 1px solid #000;
+            background-size: 300px 300px; /* Adjust the background-size to match your puzzle image dimensions */
+            cursor: move;
+        }
+    </style>
+</head>
+<body>
+    <div class="puzzle-container" id="puzzleContainer">
+        <!-- Puzzle pieces will be added here dynamically using JavaScript -->
+    </div>
+
+    <script>
+        // Replace 'your-image.jpg' with the path to your image
+        const imagePath = 'image1.jpg';
+        const rows = 3; // Number of rows in the puzzle
+        const cols = 3; // Number of columns in the puzzle
+
+        const puzzleContainer = document.getElementById('puzzleContainer');
+
+        // Shuffle function to randomize the puzzle pieces
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Create and shuffle puzzle pieces
+        function createPuzzle() {
+            const totalPieces = rows * cols;
+            const piecesOrder = Array.from({ length: totalPieces }, (_, i) => i);
+            shuffle(piecesOrder);
+
+            for (let i = 0; i < totalPieces; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece';
+                piece.id = `piece${i}`; // Assign a unique ID to each piece
+                piece.style.backgroundImage = `url(${imagePath})`;
+                piece.style.backgroundPosition = `${(piecesOrder[i] % cols) * -100}px ${(Math.floor(piecesOrder[i] / cols)) * -100}px`;
+                piece.draggable = true; // Enable drag and drop for the puzzle pieces
+                piece.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', e.target.id);
+                });
+                piece.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+                piece.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const draggedPieceId = e.dataTransfer.getData('text/plain');
+                    const draggedPiece = document.getElementById(draggedPieceId);
+                    const emptyPiece = e.target;
+
+                    // Check if the dragged piece is adjacent to the empty piece
+                    const draggedIndex = Number(draggedPieceId.replace('piece', ''));
+                    const emptyIndex = Number(emptyPiece.id.replace('piece', ''));
+                    const draggedRow = Math.floor(draggedIndex / cols);
+                    const draggedCol = draggedIndex % cols;
+                    const emptyRow = Math.floor(emptyIndex / cols);
+                    const emptyCol = emptyIndex % cols;
+                    const isAdjacent = Math.abs(draggedRow - emptyRow) + Math.abs(draggedCol - emptyCol) === 1;
+
+                    if (isAdjacent) {
+                        // Swap the background positions of the two pieces
+                        const draggedPieceBg = draggedPiece.style.backgroundPosition;
+                        draggedPiece.style.backgroundPosition = emptyPiece.style.backgroundPosition;
+                        emptyPiece.style.backgroundPosition = draggedPieceBg;
+
+                        // Swap the positions in the piecesOrder array
+                        [piecesOrder[draggedIndex], piecesOrder[emptyIndex]] = [piecesOrder[emptyIndex], piecesOrder[draggedIndex]];
+
+                        // Check if the puzzle is solved
+                        if (piecesOrder.every((pieceIndex, idx) => pieceIndex === idx)) {
+                            alert('Congratulations! Puzzle solved!');
+                        }
+                    }
+                });
+                puzzleContainer.appendChild(piece);
+            }
+        }
+
+        createPuzzle();
+    </script>
+</body>
+</html>
